@@ -1,21 +1,13 @@
 #!/bin/bash
 set -e
 
-# Start tailscaled (userspace networking for containers)
-if command -v tailscaled >/dev/null 2>&1; then
-  echo "Starting tailscaled..."
-  tailscaled --tun=userspace-networking --state="${CLAWDBOT_STATE_DIR:-/data}/tailscale.state" --socket=/tmp/tailscaled.sock &
-  sleep 1
-
-  if [ -n "${TAILSCALE_AUTHKEY}" ]; then
-    echo "Authenticating tailscale..."
-    tailscale --socket=/tmp/tailscaled.sock up --authkey="${TAILSCALE_AUTHKEY}" --hostname="${TAILSCALE_HOSTNAME:-flying-jarvis}"
-    if [ -n "${TAILSCALE_SERVE}" ]; then
-      echo "Enabling tailscale serve..."
-      tailscale --socket=/tmp/tailscaled.sock serve https / http://127.0.0.1:3000
-    fi
+# Start Cloudflare Tunnel if configured
+if command -v cloudflared >/dev/null 2>&1; then
+  if [ -n "${CLOUDFLARE_TUNNEL_TOKEN}" ]; then
+    echo "Starting Cloudflare Tunnel..."
+    cloudflared tunnel --no-autoupdate run --token "${CLOUDFLARE_TUNNEL_TOKEN}" &
   else
-    echo "TAILSCALE_AUTHKEY not set; skipping tailscale up."
+    echo "CLOUDFLARE_TUNNEL_TOKEN not set; skipping cloudflared."
   fi
 fi
 

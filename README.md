@@ -11,6 +11,7 @@ This repository contains the configuration to deploy Clawdbot to Fly.io with aut
 - Fly.io account (free tier works)
 - Anthropic API key (for Claude access)
 - Optional: Discord bot token, Telegram token, etc. for channel integrations
+- Optional: Cloudflare Zero Trust account (for tunnel access)
 
 ### Initial Deployment
 
@@ -41,9 +42,7 @@ This repository contains the configuration to deploy Clawdbot to Fly.io with aut
    - `DISCORD_BOT_TOKEN` - Your Discord bot token
    - `DISCORD_GUILD_ID` - Your Discord server/guild ID (automatically replaces `YOUR_GUILD_ID` placeholder in config)
    - Add other channel tokens as needed
-   - `TAILSCALE_AUTHKEY` - Tailscale auth key (for private access)
-   - `TAILSCALE_HOSTNAME` - Optional hostname override
-   - `TAILSCALE_SERVE` - Set to `1` to enable `tailscale serve`
+   - `CLOUDFLARE_TUNNEL_TOKEN` - Cloudflare Tunnel token (for private access)
 
 4. **Deploy:**
    - Push to the `main` branch to trigger automatic deployment via GitHub Actions
@@ -54,12 +53,9 @@ This repository contains the configuration to deploy Clawdbot to Fly.io with aut
 After deployment, you can:
 
 1. **Access the Control UI:**
-   ```bash
-   flyctl open
-   ```
-   Or visit: `https://flying-jarvis.fly.dev/`
-
-   If you enable Tailscale, the Control UI is available on your tailnet instead.
+   - If you configure Cloudflare Tunnel, use the hostname you attach to the tunnel
+     (example: `https://jarvis.example.com/`).
+   - Otherwise, use `flyctl open` or `https://{your-app-name}.fly.dev/`.
    
    The default config is automatically created on first run. You can customize it through the UI or by editing `/data/clawdbot.json` directly.
 
@@ -83,7 +79,8 @@ After deployment, you can:
 The application automatically creates a default config at `/data/clawdbot.json` on first startup. To customize:
 
 1. **Via the Control UI** (recommended):
-   - Access the UI at `https://flying-jarvis.fly.dev/`
+   - Access the UI at your Cloudflare Tunnel hostname (recommended), or
+     `https://{your-app-name}.fly.dev/` if you are using the public app URL
    - Navigate to the configuration section
    - Make your changes through the interface
 
@@ -99,6 +96,7 @@ The application automatically creates a default config at `/data/clawdbot.json` 
 - **OOM/Memory Issues:** The fly.toml is configured with 2GB RAM (recommended). If issues persist, increase memory.
 - **Gateway lock issues:** If the gateway won't start, delete lock files: `flyctl ssh console -C "rm -f /data/gateway.*.lock"`
 - **Config not persisting:** Ensure `CLAWDBOT_STATE_DIR=/data` is set (already configured in fly.toml)
-- **Tailscale not reachable:** Ensure `TAILSCALE_AUTHKEY` is set and `TAILSCALE_SERVE=1` is enabled
+- **Cloudflare Tunnel not reachable:** Ensure `CLOUDFLARE_TUNNEL_TOKEN` is set and the tunnel
+  points to `http://127.0.0.1:3000`
 
 For more details, see the [official Clawdbot Fly.io documentation](https://docs.clawd.bot/platforms/fly.md).

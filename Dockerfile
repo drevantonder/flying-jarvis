@@ -6,13 +6,14 @@ ENV PATH="/root/.bun/bin:${PATH}"
 
 RUN corepack enable
 
-# Install git to clone the repository and tailscale for private access
+# Install git to clone the repository and cloudflared for tunnel access
 RUN apt-get update && \
     apt-get install -y --no-install-recommends git ca-certificates curl gnupg && \
-    curl -fsSL https://pkgs.tailscale.com/stable/debian/bookworm.noarmor.gpg | tee /usr/share/keyrings/tailscale-archive-keyring.gpg >/dev/null && \
-    curl -fsSL https://pkgs.tailscale.com/stable/debian/bookworm.tailscale-keyring.list | tee /etc/apt/sources.list.d/tailscale.list >/dev/null && \
+    curl -fsSL https://pkg.cloudflare.com/cloudflare-main.gpg | tee /usr/share/keyrings/cloudflare-main.gpg >/dev/null && \
+    echo "deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://pkg.cloudflare.com/cloudflared bookworm main" \
+      | tee /etc/apt/sources.list.d/cloudflared.list >/dev/null && \
     apt-get update && \
-    apt-get install -y --no-install-recommends tailscale && \
+    apt-get install -y --no-install-recommends cloudflared && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
 
