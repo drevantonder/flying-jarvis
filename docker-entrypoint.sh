@@ -149,6 +149,66 @@ if (config.gateway.port !== desiredPort) {
 NODE
 }
 
+maybe_sync_discord_plugin_enabled() {
+  if [ -z "${DISCORD_BOT_TOKEN+x}" ]; then
+    return
+  fi
+
+  local desired
+  desired="false"
+  if [ -n "$(trim_value "${DISCORD_BOT_TOKEN:-}")" ]; then
+    desired="true"
+  fi
+
+  if [ ! -f "$CONFIG_FILE" ]; then
+    echo "Config file not found at $CONFIG_FILE; skipping discord plugin sync."
+    return
+  fi
+
+  CONFIG_FILE="$CONFIG_FILE" OPENCLAW_DISCORD_PLUGIN_ENABLED="$desired" node - <<'NODE'
+const fs = require("fs");
+
+const configPath = process.env.CONFIG_FILE;
+const shouldEnable = process.env.OPENCLAW_DISCORD_PLUGIN_ENABLED === "true";
+if (!configPath) {
+  console.error("CONFIG_FILE not set; skipping discord plugin sync.");
+  process.exit(0);
+}
+if (!fs.existsSync(configPath)) {
+  console.error(`Config file not found at ${configPath}; skipping discord plugin sync.`);
+  process.exit(0);
+}
+
+let raw;
+try {
+  raw = fs.readFileSync(configPath, "utf8");
+} catch (err) {
+  console.error(`Failed to read config at ${configPath}: ${err}`);
+  process.exit(1);
+}
+
+let config;
+try {
+  config = JSON.parse(raw);
+} catch (err) {
+  console.error(`Failed to parse config JSON at ${configPath}: ${err}`);
+  process.exit(1);
+}
+
+config.plugins = config.plugins ?? {};
+config.plugins.entries = config.plugins.entries ?? {};
+config.plugins.entries.discord = config.plugins.entries.discord ?? {};
+
+if (config.plugins.entries.discord.enabled !== shouldEnable) {
+  config.plugins.entries.discord.enabled = shouldEnable;
+  fs.writeFileSync(configPath, JSON.stringify(config, null, 2) + "\n");
+  console.log(`Set plugins.entries.discord.enabled=${shouldEnable} in config.`);
+} else {
+  console.log(`plugins.entries.discord.enabled already ${shouldEnable}; leaving config as-is.`);
+}
+NODE
+}
+
 # Start Cloudflare Tunnel if configured
 if command -v cloudflared >/dev/null 2>&1; then
   cloudflare_token_raw="${CLOUDFLARE_TUNNEL_TOKEN:-}"
@@ -209,6 +269,7 @@ fi
 
 maybe_sync_insecure_control_ui
 maybe_sync_gateway_port
+maybe_sync_discord_plugin_enabled
 
 # Log config path on startup (without dumping contents)
 if [ -f "$CONFIG_FILE" ]; then
