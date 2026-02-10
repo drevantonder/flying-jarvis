@@ -23,8 +23,9 @@ This template is tuned for **private Fly deployment + Cloudflare Zero Trust**:
 
 1. Complete prerequisites and Cloudflare Tunnel setup.
 2. Add required GitHub Actions secrets.
-3. Deploy by pushing to `main` or running the workflow manually.
+3. Deploy by pushing to `main` or running the workflow manually (recommended first deploy: `openclaw_version=main` + `reset_config=true`).
 4. Validate deploy health and access OpenClaw via your Cloudflare-protected hostname.
+5. If the Control UI shows `disconnected (1008): pairing required`, approve the pending device request from inside the Fly machine.
 
 For exact commands and values, follow the runbook sections:
 

@@ -2,6 +2,18 @@
 
 This runbook is for deploying OpenClaw on Fly with Cloudflare Tunnel + Zero Trust Access.
 
+## Fast path checklist
+
+If you want the shortest reliable setup:
+
+1. Set required GitHub Actions secrets (`FLY_*`, gateway token, tunnel token, and at least one provider key).
+2. If you want Discord, set both `DISCORD_BOT_TOKEN` and `DISCORD_GUILD_ID`.
+3. Deploy with workflow inputs:
+   - `openclaw_version=main`
+   - `reset_config=true` (first deploy or when changing core auth/channel config)
+4. Open your Cloudflare hostname, then pair the browser/device once if prompted.
+5. Re-deploy later with `reset_config=false` for normal updates.
+
 ## 1) Prerequisites
 
 - Fly account + `flyctl`
@@ -101,11 +113,13 @@ Manual workflow inputs:
   - set `true` to force a fresh `/data/openclaw.json` on startup
   - the workflow clears `RESET_CONFIG` after deploy so the reset remains one-shot
 
+Recommended for first setup: run once with `openclaw_version=main` and `reset_config=true`.
+
 ## 6) Validate after deploy
 
 ```bash
 flyctl status -a <your-fly-app-name>
-flyctl logs -a <your-fly-app-name>
+flyctl logs -a <your-fly-app-name> --no-tail
 ```
 
 Expected signs:
@@ -114,6 +128,31 @@ Expected signs:
 - cloudflared started with your tunnel token
 
 Then open your Cloudflare-protected hostname and sign in through Access.
+
+### First remote Control UI connection (pairing expected)
+
+If Control UI shows `disconnected (1008): pairing required`, this is expected for first-time remote devices.
+
+Approve the pending device request from inside the Fly machine:
+
+```bash
+flyctl ssh console -a <your-fly-app-name>
+npx openclaw devices list
+npx openclaw devices approve <request-id>
+```
+
+Then refresh the UI and connect again.
+
+### Channel and provider sanity check
+
+Run this from inside the Fly machine after deploy:
+
+```bash
+npx openclaw status --deep
+npx openclaw channels list
+```
+
+If `channels list` shows no channels or no auth providers, re-check secrets and run a one-time deploy with `reset_config=true`.
 
 ## 7) Operations
 
@@ -132,7 +171,7 @@ flyctl ssh console -a <your-fly-app-name>
 ### Inspect config
 
 ```bash
-cat /data/openclaw.json
+sed -n '1,240p' /data/openclaw.json
 ```
 
 ### Restart machine
@@ -140,6 +179,14 @@ cat /data/openclaw.json
 ```bash
 flyctl machines list -a <your-fly-app-name>
 flyctl machine restart <machine-id> -a <your-fly-app-name>
+```
+
+### Run one-shot commands safely over Fly SSH
+
+When using `flyctl ssh console -C`, wrap commands in a shell so pipes/loops/expansions work reliably:
+
+```bash
+flyctl ssh console -a <your-fly-app-name> -C 'sh -lc "npx openclaw status --deep"'
 ```
 
 ## 8) Common troubleshooting
@@ -154,25 +201,26 @@ flyctl machine restart <machine-id> -a <your-fly-app-name>
 
 - Confirm `DISCORD_BOT_TOKEN` is set in Fly secrets.
 - Confirm `DISCORD_GUILD_ID` matches the target Discord server.
+- This template auto-enables `plugins.entries.discord.enabled=true` whenever `DISCORD_BOT_TOKEN` is present at startup.
 - Verify gateway reachability:
 
 ```bash
-openclaw gateway probe
-openclaw status --deep
-openclaw gateway health --url ws://127.0.0.1:3000 --token "$OPENCLAW_GATEWAY_TOKEN"
+npx openclaw gateway probe
+npx openclaw status --deep
+npx openclaw gateway health --url ws://127.0.0.1:3000 --token "$OPENCLAW_GATEWAY_TOKEN"
 ```
 
 - If health/probe reports `connect ECONNREFUSED`, start in foreground mode:
 
 ```bash
-openclaw gateway run --allow-unconfigured --port 3000 --bind auto
+npx openclaw gateway run --allow-unconfigured --port 3000 --bind auto
 ```
 
 - Re-check channels:
 
 ```bash
-openclaw channels list
-openclaw status
+npx openclaw channels list
+npx openclaw status
 ```
 
 - If you intentionally use `--force`, ensure `lsof` is installed in the image.
@@ -180,7 +228,14 @@ openclaw status
 ### Control UI auth issues
 
 - Verify `OPENCLAW_GATEWAY_TOKEN` is set.
-- Pair new devices if required (see Control UI docs).
+- If you see `disconnected (1008): pairing required`, run:
+
+```bash
+flyctl ssh console -a <your-fly-app-name>
+npx openclaw devices list
+npx openclaw devices approve <request-id>
+```
+
 - Only use `OPENCLAW_CONTROL_UI_ALLOW_INSECURE_AUTH=true` when you intentionally accept token-only auth behavior.
 
 ### Gateway lock file issue
