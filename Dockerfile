@@ -2,7 +2,7 @@ FROM node:22-bookworm
 
 # Install Bun (required for build scripts)
 RUN curl -fsSL https://bun.sh/install | bash
-ENV PATH="/root/.bun/bin:${PATH}"
+ENV PATH="/app/node_modules/.bin:/root/.bun/bin:${PATH}"
 
 RUN corepack enable
 
@@ -45,9 +45,11 @@ RUN pnpm ui:build
 COPY default-config.json /app/default-config.json
 COPY docker-entrypoint.sh /app/docker-entrypoint.sh
 COPY scripts/sync-runtime-config.mjs /app/scripts/sync-runtime-config.mjs
-RUN chmod +x /app/docker-entrypoint.sh
+COPY bin/startup-runner.sh /app/bin/startup-runner.sh
+COPY docs/agent /app/docs/agent
+RUN chmod +x /app/docker-entrypoint.sh /app/bin/startup-runner.sh
 
 ENV NODE_ENV=production
 
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
-CMD ["node", "dist/index.js", "gateway", "run", "--allow-unconfigured", "--port", "3000", "--bind", "auto"]
+CMD ["/app/bin/startup-runner.sh"]
