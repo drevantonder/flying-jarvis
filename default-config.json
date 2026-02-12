@@ -27,12 +27,12 @@
   "gateway": {
     "mode": "local",
     "bind": "auto",
-    "port": 3000,
-    "hooks": {
-      "enabled": false,
-      "path": "/hooks",
-      "allowedAgentIds": ["*"]
-    }
+    "port": 3000
+  },
+  "hooks": {
+    "enabled": false,
+    "path": "/hooks",
+    "allowedAgentIds": ["*"]
   },
   "meta": {
     "lastTouchedVersion": "2026.1.29"

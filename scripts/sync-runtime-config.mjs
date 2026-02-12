@@ -182,31 +182,57 @@ const hooksAllowedAgentIdsEnv = Object.prototype.hasOwnProperty.call(
 )
   ? trimValue(process.env.OPENCLAW_HOOKS_ALLOWED_AGENT_IDS)
   : null;
-const gateway = ensureObject(config, "gateway");
-const hooks = ensureObject(gateway, "hooks");
+const gatewayForHooksMigration = ensureObject(config, "gateway");
+const legacyGatewayHooks =
+  gatewayForHooksMigration.hooks &&
+  typeof gatewayForHooksMigration.hooks === "object" &&
+  !Array.isArray(gatewayForHooksMigration.hooks)
+    ? gatewayForHooksMigration.hooks
+    : null;
+const hooks = ensureObject(config, "hooks");
+if (legacyGatewayHooks) {
+  if (
+    (typeof hooks.enabled !== "boolean" && typeof legacyGatewayHooks.enabled === "boolean") ||
+    (typeof hooks.path !== "string" && typeof legacyGatewayHooks.path === "string") ||
+    (!Array.isArray(hooks.allowedAgentIds) && Array.isArray(legacyGatewayHooks.allowedAgentIds))
+  ) {
+    if (typeof hooks.enabled !== "boolean" && typeof legacyGatewayHooks.enabled === "boolean") {
+      hooks.enabled = legacyGatewayHooks.enabled;
+    }
+    if (typeof hooks.path !== "string" && typeof legacyGatewayHooks.path === "string") {
+      hooks.path = legacyGatewayHooks.path;
+    }
+    if (!Array.isArray(hooks.allowedAgentIds) && Array.isArray(legacyGatewayHooks.allowedAgentIds)) {
+      hooks.allowedAgentIds = legacyGatewayHooks.allowedAgentIds;
+    }
+  }
+  delete gatewayForHooksMigration.hooks;
+  console.log("Moved legacy gateway.hooks to top-level hooks");
+  changed = true;
+}
 
 const desiredHooksPath = hooksPathEnv || "/hooks";
 if (hooks.path !== desiredHooksPath) {
   hooks.path = desiredHooksPath;
-  console.log(`Set gateway.hooks.path=${desiredHooksPath}`);
+  console.log(`Set hooks.path=${desiredHooksPath}`);
   changed = true;
 }
 
 if (hooksToken) {
   if (hooks.enabled !== true) {
     hooks.enabled = true;
-    console.log("Set gateway.hooks.enabled=true");
+    console.log("Set hooks.enabled=true");
     changed = true;
   }
   if (hooks.token !== hooksToken) {
     hooks.token = hooksToken;
-    console.log("Set gateway.hooks.token from OPENCLAW_HOOKS_TOKEN");
+    console.log("Set hooks.token from OPENCLAW_HOOKS_TOKEN");
     changed = true;
   }
 } else if (hooks.enabled === true && !trimValue(hooks.token)) {
   // Keep webhook config safe-by-default if enabled without a token.
   hooks.enabled = false;
-  console.log("Set gateway.hooks.enabled=false (missing token)");
+  console.log("Set hooks.enabled=false (missing token)");
   changed = true;
 }
 
@@ -218,14 +244,12 @@ if (hooksAllowedAgentIdsEnv !== null) {
   const currentAllowedAgentIds = Array.isArray(hooks.allowedAgentIds) ? hooks.allowedAgentIds : [];
   if (!arraysEqual(currentAllowedAgentIds, desiredAllowedAgentIds)) {
     hooks.allowedAgentIds = desiredAllowedAgentIds;
-    console.log(
-      `Set gateway.hooks.allowedAgentIds=${JSON.stringify(desiredAllowedAgentIds)}`,
-    );
+    console.log(`Set hooks.allowedAgentIds=${JSON.stringify(desiredAllowedAgentIds)}`);
     changed = true;
   }
 } else if (!Array.isArray(hooks.allowedAgentIds)) {
   hooks.allowedAgentIds = ["*"];
-  console.log('Set gateway.hooks.allowedAgentIds=["*"]');
+  console.log('Set hooks.allowedAgentIds=["*"]');
   changed = true;
 }
 
