@@ -38,8 +38,9 @@ jobs:
           [ -n "${OPENCLAW_GATEWAY_TOKEN}" ] || { echo "Missing required secret: OPENCLAW_GATEWAY_TOKEN"; exit 1; }
           [ -n "${CLOUDFLARE_TUNNEL_TOKEN}" ] || { echo "Missing required secret: CLOUDFLARE_TUNNEL_TOKEN"; exit 1; }
 
-          if [ -z "${ANTHROPIC_API_KEY}" ] && [ -z "${OPENAI_API_KEY}" ] && [ -z "${GEMINI_API_KEY}" ]; then
-            echo "Set at least one model provider key: ANTHROPIC_API_KEY, OPENAI_API_KEY, or GEMINI_API_KEY"
+          OPENCODE_ZEN_API_KEY="${OPENCODE_ZEN_API_KEY:-${OPENCODE_API_KEY}}"
+          if [ -z "${ANTHROPIC_API_KEY}" ] && [ -z "${OPENAI_API_KEY}" ] && [ -z "${GEMINI_API_KEY}" ] && [ -z "${OPENCODE_ZEN_API_KEY}" ]; then
+            echo "Set at least one model provider key: ANTHROPIC_API_KEY, OPENAI_API_KEY, GEMINI_API_KEY, OPENCODE_ZEN_API_KEY, or OPENCODE_API_KEY"
             exit 1
           fi
 
@@ -59,6 +60,8 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          OPENCODE_ZEN_API_KEY: ${{ secrets.OPENCODE_ZEN_API_KEY }}
+          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
           FLY_VOLUME_SIZE_GB: ${{ secrets.FLY_VOLUME_SIZE_GB || '1' }}
 
       - name: Ensure Fly app and volume exist
@@ -95,6 +98,8 @@ jobs:
         run: |
           set -euo pipefail
 
+          OPENCODE_ZEN_API_KEY="${OPENCODE_ZEN_API_KEY:-${OPENCODE_API_KEY}}"
+
           if [ -z "${OPENCLAW_HOOKS_TOKEN}" ]; then
             echo "::notice title=Webhooks disabled by default::OPENCLAW_HOOKS_TOKEN is not set, so gateway webhooks remain disabled. Set this secret to enable /hooks endpoints."
           fi
@@ -111,8 +116,11 @@ jobs:
             echo "::notice title=Discord channel default::DISCORD_CHANNEL_ID is not set. Startup seeds 'general' while allowing all guild channels by default."
           fi
 
-          if [ -n "${GEMINI_API_KEY}" ] && [ -z "${OPENAI_API_KEY}" ] && [ -z "${ANTHROPIC_API_KEY}" ]; then
+          if [ -n "${GEMINI_API_KEY}" ] && [ -z "${OPENAI_API_KEY}" ] && [ -z "${ANTHROPIC_API_KEY}" ] && [ -z "${OPENCODE_ZEN_API_KEY}" ]; then
             echo "::notice title=Model auto-selection::Only GEMINI_API_KEY is set. Startup will choose google/gemini-3-pro-preview as the primary model."
+          fi
+          if [ -n "${OPENCODE_ZEN_API_KEY}" ] && [ -z "${OPENAI_API_KEY}" ] && [ -z "${ANTHROPIC_API_KEY}" ] && [ -z "${GEMINI_API_KEY}" ]; then
+            echo "::notice title=Model auto-selection::Only OPENCODE_ZEN_API_KEY is set. Startup will use the OpenCode/Zen auth profile as primary."
           fi
         env:
           OPENCLAW_HOOKS_TOKEN: ${{ secrets.OPENCLAW_HOOKS_TOKEN }}
@@ -122,6 +130,8 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          OPENCODE_ZEN_API_KEY: ${{ secrets.OPENCODE_ZEN_API_KEY }}
+          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
 
       - name: Set Fly.io secrets from GitHub secrets
         run: |
@@ -135,6 +145,10 @@ jobs:
           [ -n "${ANTHROPIC_API_KEY}" ] && SECRETS+=("ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}")
           [ -n "${OPENAI_API_KEY}" ] && SECRETS+=("OPENAI_API_KEY=${OPENAI_API_KEY}")
           [ -n "${GEMINI_API_KEY}" ] && SECRETS+=("GEMINI_API_KEY=${GEMINI_API_KEY}")
+          if [ -n "${OPENCODE_API_KEY}" ] && [ -z "${OPENCODE_ZEN_API_KEY}" ]; then
+            OPENCODE_ZEN_API_KEY="${OPENCODE_API_KEY}"
+          fi
+          [ -n "${OPENCODE_ZEN_API_KEY}" ] && SECRETS+=("OPENCODE_ZEN_API_KEY=${OPENCODE_ZEN_API_KEY}")
           [ -n "${OPENCLAW_HOOKS_TOKEN}" ] && SECRETS+=("OPENCLAW_HOOKS_TOKEN=${OPENCLAW_HOOKS_TOKEN}")
           [ -n "${OPENCLAW_HOOKS_PATH}" ] && SECRETS+=("OPENCLAW_HOOKS_PATH=${OPENCLAW_HOOKS_PATH}")
           [ -n "${OPENCLAW_HOOKS_ALLOWED_AGENT_IDS}" ] && SECRETS+=("OPENCLAW_HOOKS_ALLOWED_AGENT_IDS=${OPENCLAW_HOOKS_ALLOWED_AGENT_IDS}")
@@ -156,6 +170,8 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          OPENCODE_ZEN_API_KEY: ${{ secrets.OPENCODE_ZEN_API_KEY }}
+          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
           OPENCLAW_HOOKS_TOKEN: ${{ secrets.OPENCLAW_HOOKS_TOKEN }}
           OPENCLAW_HOOKS_PATH: ${{ secrets.OPENCLAW_HOOKS_PATH }}
           OPENCLAW_HOOKS_ALLOWED_AGENT_IDS: ${{ secrets.OPENCLAW_HOOKS_ALLOWED_AGENT_IDS }}

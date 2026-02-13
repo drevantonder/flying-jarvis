@@ -2,8 +2,8 @@
   "agents": {
     "defaults": {
       "model": {
-        "primary": "openai/gpt-5.2",
-        "fallbacks": ["anthropic/claude-opus-4-5", "anthropic/claude-sonnet-4-5", "openai/gpt-4o"]
+        "primary": "opencode/claude-opus-4-6",
+        "fallbacks": ["anthropic/claude-opus-4-5", "anthropic/claude-sonnet-4-5", "openai/gpt-5.2", "openai/gpt-4o"]
       },
       "maxConcurrent": 4,
       "workspace": "/data/workspace"
@@ -20,6 +20,7 @@
   },
   "auth": {
     "profiles": {
+      "opencode:default": { "mode": "token", "provider": "opencode" },
       "anthropic:default": { "mode": "token", "provider": "anthropic" },
       "openai:default": { "mode": "token", "provider": "openai" }
     }

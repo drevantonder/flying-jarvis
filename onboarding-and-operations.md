@@ -64,6 +64,8 @@ Required secrets:
   - `ANTHROPIC_API_KEY`
   - `OPENAI_API_KEY`
   - or `GEMINI_API_KEY`
+  - or `OPENCODE_ZEN_API_KEY`
+  - or `OPENCODE_API_KEY`
 - `CLOUDFLARE_TUNNEL_TOKEN`
 
 Optional:
@@ -81,10 +83,10 @@ Optional:
 
 Startup auto-wiring behaviors:
 
-- Provider keys (`OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GEMINI_API_KEY`) create matching `auth.profiles.*:default` entries when missing.
+- Provider keys (`OPENCODE_ZEN_API_KEY`, `OPENCODE_API_KEY`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GEMINI_API_KEY`) create matching `auth.profiles.*:default` entries when missing.
 - Startup ensures both `main` and `hooks` agents exist; use `hooks` as the default target for webhook workloads.
 - When `OPENCLAW_HOOKS_TOKEN` is set, startup enables top-level `hooks`, writes the shared token, and keeps webhook path/agent allowlist aligned with env defaults (`/hooks`, `*`).
-- Startup selects `agents.defaults.model.primary` from available providers (priority: OpenAI, then Anthropic, then Google) and keeps fallbacks aligned with available provider keys.
+- Startup selects `agents.defaults.model.primary` from available providers (priority: OpenCode, then OpenAI, then Anthropic, then Google) and keeps fallbacks aligned with available provider keys.
 - When both `DISCORD_BOT_TOKEN` and `DISCORD_GUILD_ID` are set, startup enables Discord plugin/binding, sets `channels.discord.groupPolicy="open"`, enables wildcard channel access, and seeds a default channel key (`DISCORD_CHANNEL_ID` or `general`).
 
 ### Secret value cookbook
@@ -104,6 +106,8 @@ Use these examples when you populate GitHub repository secrets:
 | `ANTHROPIC_API_KEY` | One provider key required | `sk-ant-...` | Anthropic Console | Unset unless you add it |
 | `OPENAI_API_KEY` | One provider key required | `sk-proj-...` | OpenAI API keys page | Unset unless you add it |
 | `GEMINI_API_KEY` | One provider key required | `AIza...` | Google AI Studio / Google Cloud credentials | Unset unless you add it |
+| `OPENCODE_ZEN_API_KEY` | One provider key required | `sk-...` | OpenCode Zen dashboard | Unset unless you add it |
+| `OPENCODE_API_KEY` | One provider key required | `sk-...` | OpenCode Zen dashboard | Unset unless you add it |
 | `DISCORD_BOT_TOKEN` | No | `MTA...` | Discord Developer Portal → Bot token | Unset |
 | `DISCORD_GUILD_ID` | No | `123456789012345678` | Discord Developer Mode → copy server ID | Unset |
 | `DISCORD_CHANNEL_ID` | No | `123456789012345678` | Discord Developer Mode → copy channel ID | `general` |

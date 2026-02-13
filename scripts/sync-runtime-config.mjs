@@ -91,6 +91,13 @@ function parseCsvList(value) {
 // Order matters: first available provider becomes default primary model when current primary is missing/unusable.
 const providerDefaults = [
   {
+    provider: "opencode",
+    envVar: "OPENCODE_ZEN_API_KEY",
+    profileKey: "opencode:default",
+    primaryModel: "opencode/claude-opus-4-6",
+    fallbackModels: [],
+  },
+  {
     provider: "openai",
     envVar: "OPENAI_API_KEY",
     profileKey: "openai:default",
@@ -113,6 +120,11 @@ const providerDefaults = [
   },
 ];
 const providerDefaultsByName = new Map(providerDefaults.map((entry) => [entry.provider, entry]));
+
+const opencodeApiKey = trimValue(process.env.OPENCODE_ZEN_API_KEY) || trimValue(process.env.OPENCODE_API_KEY);
+if (opencodeApiKey && !trimValue(process.env.OPENCODE_ZEN_API_KEY)) {
+  process.env.OPENCODE_ZEN_API_KEY = opencodeApiKey;
+}
 
 const configPath = trimValue(process.env.OPENCLAW_CONFIG_FILE);
 if (!configPath) {
