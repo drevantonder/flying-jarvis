@@ -316,3 +316,58 @@ When first opening an in-machine agent session, useful prompts are:
 1. `Read /app/docs/agent/readme.md and /app/docs/agent/env.md, then summarize key paths and runtime conventions.`
 2. `Use bounded log reads to diagnose gateway startup and identify the first fatal event.`
 3. `Check gateway health and channel status, then summarize any blocking errors.`
+
+## 10) Siri power controls (Cloudflare Worker)
+
+Use the worker in [`workers/fly-power`](./workers/fly-power) to power your Fly Machine on/off from Siri Shortcuts.
+
+What it provides:
+
+- `GET /status`
+- `POST /start` (optional `?wait=1`)
+- `POST /stop`
+- daily cron auto-stop at **12:00 AEST fixed year-round** (`0 2 * * *` UTC)
+
+### Deploy the worker
+
+```bash
+cd workers/fly-power
+npx wrangler login
+npx wrangler secret put FLY_API_TOKEN
+npx wrangler secret put SHORTCUT_TOKEN
+npx wrangler deploy
+```
+
+Defaults already in `workers/fly-power/wrangler.toml`:
+
+- `FLY_APP_NAME = "openclaw-drevan"`
+- `AUTO_STOP_ENABLED = "true"`
+- cron trigger `0 2 * * *`
+
+### Quick endpoint test
+
+```bash
+BASE="https://<your-worker-domain>.workers.dev"
+TOKEN="<SHORTCUT_TOKEN>"
+
+curl -sS "$BASE/status" -H "Authorization: Bearer $TOKEN"
+curl -sS -X POST "$BASE/stop" -H "Authorization: Bearer $TOKEN"
+curl -sS -X POST "$BASE/start?wait=1" -H "Authorization: Bearer $TOKEN"
+```
+
+### Siri Shortcut setup
+
+Create three shortcuts using **Get Contents of URL**:
+
+1. **Start OpenClaw**
+   - URL: `https://<worker-domain>/start?wait=1`
+   - Method: `POST`
+   - Header: `Authorization: Bearer <SHORTCUT_TOKEN>`
+2. **Stop OpenClaw**
+   - URL: `https://<worker-domain>/stop`
+   - Method: `POST`
+   - Header: `Authorization: Bearer <SHORTCUT_TOKEN>`
+3. **OpenClaw Status**
+   - URL: `https://<worker-domain>/status`
+   - Method: `GET`
+   - Header: `Authorization: Bearer <SHORTCUT_TOKEN>`

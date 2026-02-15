@@ -7,6 +7,7 @@ Deploy [OpenClaw](https://openclaw.ai/) to [Fly.io](https://fly.io/) with:
 - Cloudflare Tunnel
 - Cloudflare Zero Trust Access in front of Control UI
 - optional internet webhooks (`/hooks/*`) guarded by Cloudflare Access + OpenClaw hook token
+- optional Cloudflare Worker power controls for Siri (`start`/`stop`/`status` + noon AEST auto-stop)
 
 This README is intentionally high-level. Use the runbook as the source of truth for setup and operations:
 
@@ -29,6 +30,7 @@ This template is tuned for **private Fly deployment + Cloudflare Zero Trust**:
 5. If the Control UI shows `disconnected (1008): pairing required`, approve the pending device request from inside the Fly machine.
 6. For Discord setup, set `DISCORD_BOT_TOKEN` and `DISCORD_GUILD_ID` (optionally `DISCORD_CHANNEL_ID`); startup auto-configures Discord with open guild-channel policy and seeds a default channel key (`DISCORD_CHANNEL_ID` or `general`).
 7. For webhook setup, set `OPENCLAW_HOOKS_TOKEN` (optionally `OPENCLAW_HOOKS_PATH` and `OPENCLAW_HOOKS_ALLOWED_AGENT_IDS`), and target `agentId: "hooks"` in `/hooks/agent` payloads.
+8. Optional: deploy the Siri power worker at [`workers/fly-power`](./workers/fly-power) for remote `start`/`stop`/`status` and scheduled stop at 12:00 AEST.
 
 For exact commands and values, follow the runbook sections:
 
@@ -39,6 +41,7 @@ For exact commands and values, follow the runbook sections:
 - deployment: [`5) Deploy`](./onboarding-and-operations.md#5-deploy)
 - validation: [`6) Validate after deploy`](./onboarding-and-operations.md#6-validate-after-deploy)
 - operations + troubleshooting: [`7) Operations`](./onboarding-and-operations.md#7-operations) and [`8) Common troubleshooting`](./onboarding-and-operations.md#8-common-troubleshooting)
+- Siri power controls: [`10) Siri power controls (Cloudflare Worker)`](./onboarding-and-operations.md#10-siri-power-controls-cloudflare-worker)
 
 Agent docs shipped in the image:
 

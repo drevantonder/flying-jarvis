@@ -1,0 +1,12 @@
+name = "openclaw-fly-power"
+main = "src/index.js"
+compatibility_date = "2026-02-14"
+workers_dev = true
+preview_urls = false
+
+[vars]
+FLY_APP_NAME = "openclaw-drevan"
+AUTO_STOP_ENABLED = "true"
+
+[triggers]
+crons = ["0 2 * * *"]
